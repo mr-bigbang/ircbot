@@ -7,9 +7,9 @@ namespace Network {
     namespace IRC {
         class Server : public QObject
         {
-        Q_OBJECT
+            Q_OBJECT
         public:
-            Server(QString hostname, int port=6667);
+            explicit Server(QString hostname, int port=6667, QObject *parent = 0);
             void connect(QString realname, QString nickname);
             ~Server();
         private:

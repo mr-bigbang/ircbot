@@ -5,7 +5,8 @@
 
 namespace Network {
     namespace IRC {
-        Server::Server(QString hostname, int port) :
+        Server::Server(QString hostname, int port, QObject *parent) :
+            QObject(parent),
             socket(new QSslSocket(this)),
             hostname(hostname),
             port(port)
