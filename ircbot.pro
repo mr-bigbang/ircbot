@@ -8,7 +8,7 @@ INCLUDEPATH += .
 
 QT += network
 
-CONFIG += c++11
+CONFIG += c++11 console
 
 # Input
 HEADERS += src/Network.IRC.Server.hpp
