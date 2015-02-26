@@ -1,7 +1,7 @@
 #include "Network.IRC.Server.hpp"
 
-#include <iostream>
-#include <QDebug>
+#include <QtCore/QDebug>
+#include <QtCore/QCoreApplication>
 
 namespace Network {
     namespace IRC {
@@ -17,9 +17,8 @@ namespace Network {
         }
 
         Server::~Server() {
-            qDebug() << "Sending QUIT command...";
-            this->socket->write("QUIT :Goodbye");
-            this->socket->waitForBytesWritten();
+            qDebug() << "Closing socket...";
+            this->socket->close();
             delete this->socket;
         }
 
@@ -58,10 +57,10 @@ namespace Network {
         void Server::readData() {
             qDebug() << "New data to read!";
             // Get all incoming data and split it by line
-            QList<QByteArray> input = this->socket->readAll().replace("\n", "").split('\r');
+            QList<QByteArray> input = this->socket->readAll().replace("\r", "").split('\n');
 
             // Parse each line of the incoming data
-            for(auto command : input) {
+            for(QByteArray command : input) {
                 if(command.isEmpty()) {
                     continue;
                 }
