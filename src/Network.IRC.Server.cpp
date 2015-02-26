@@ -12,6 +12,8 @@ namespace Network {
             port(port)
         {
             QObject::connect(this->socket, SIGNAL(readyRead()), this, SLOT(readData()));
+            QObject::connect(this, SIGNAL(ping(QString)), SLOT(pong(QString)));
+            QObject::connect(this, SIGNAL(connected()), this, SLOT(join()));
         }
 
         Server::~Server() {
@@ -25,17 +27,32 @@ namespace Network {
         void Server::connect(QString nickname, QString realname) {
             qDebug() << "Connecting to host" << this->hostname << "on port" << this->port << "...";
             this->socket->connectToHost(this->hostname, this->port);
-            this->socket->waitForConnected();
 
-            qDebug() << "Sending NICK command...";
-            QString nickCommand = QString("NICK %1\r\n").arg(nickname);
-            this->socket->write(nickCommand.toStdString().c_str());
-            this->socket->waitForBytesWritten();
+            // Send NICK command
+            this->nick(nickname);
 
             qDebug() << "Sending USER command...";
             QString userCommand = QString("USER %1 0 * :%2\r\n").arg(nickname).arg(realname);
             this->socket->write(userCommand.toStdString().c_str());
-            this->socket->waitForBytesWritten();
+        }
+
+        // private slots/functions
+        void Server::pong(QString id) {
+            qDebug() << "PING recived! Sending PONG...";
+            QString pongCommand = QString("PONG :%1\r\n").arg(id);
+            this->socket->write(pongCommand.toStdString().c_str());
+        }
+
+        void Server::join(QString channel) {
+            qDebug() << "Sending JOIN command. Joining channel" << channel << "...";
+            QString joinCommand = QString("JOIN :%1\r\n").arg(channel);
+            this->socket->write(joinCommand.toStdString().c_str());
+        }
+
+        void Server::nick(QString nickname) {
+            qDebug() << "Sending NICK command. New nickname will be " << nickname;
+            QString nickCommand = QString("NICK %1\r\n").arg(nickname);
+            this->socket->write(nickCommand.toStdString().c_str());
         }
 
         void Server::readData() {
@@ -50,12 +67,16 @@ namespace Network {
                 }
                 qDebug() << command;
 
+                // Reply to PING requests
                 if(command.toLower().startsWith("ping")) {
-                    qDebug() << "PING recived! Sending PONG...";
+                    emit ping(QString(command.mid(6)));
+                    continue;
+                }
 
-                    QString pongCommand = QString("PONG :%1\r\n").arg(QString::fromStdString(command.mid(6).toStdString()));
-                    this->socket->write(pongCommand.toStdString().c_str());
-                    this->socket->waitForBytesWritten();
+                if(command.toLower().contains(" 376 ")) {
+                    qDebug() << "End of MOTD";
+                    emit connected();
+                    continue;
                 }
             }
         }
