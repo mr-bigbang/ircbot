@@ -10,7 +10,7 @@ namespace Network {
             Q_OBJECT
         public:
             explicit Server(QString hostname, int port=6667, QObject *parent = 0);
-            void connect(QString realname, QString nickname);
+            void connect(QString nickname, QString realname);
             ~Server();
         private:
             QSslSocket *socket;

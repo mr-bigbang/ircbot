@@ -22,7 +22,7 @@ namespace Network {
         }
 
         // public functions
-        void Server::connect(QString realname, QString nickname) {
+        void Server::connect(QString nickname, QString realname) {
             qDebug() << "Connecting to host" << this->hostname << "on port" << this->port << "...";
             this->socket->connectToHost(this->hostname, this->port);
             this->socket->waitForConnected();
