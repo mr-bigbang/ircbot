@@ -11,5 +11,6 @@ QT += network
 CONFIG += c++11 console
 
 # Input
-HEADERS += src/Network.IRC.Server.hpp
+HEADERS += src/Network.IRC.Server.hpp \
+    src/Network.IRC.Replies.hpp
 SOURCES += src/main.cpp src/Network.IRC.Server.cpp
