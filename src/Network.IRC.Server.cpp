@@ -12,6 +12,7 @@ namespace Network {
             port(port)
         {
             QObject::connect(this->socket, SIGNAL(readyRead()), this, SLOT(readData()));
+            QObject::connect(this->socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslError(QList<QSslError>)));
             QObject::connect(this, SIGNAL(ping(QString)), SLOT(pong(QString)));
             QObject::connect(this, SIGNAL(connected()), this, SLOT(join()));
         }
@@ -23,9 +24,13 @@ namespace Network {
         }
 
         // public functions
-        void Server::connect(QString nickname, QString realname) {
+        void Server::connect(QString nickname, QString realname, bool encrypted) {
             qDebug() << "Connecting to host" << this->hostname << "on port" << this->port << "...";
-            this->socket->connectToHost(this->hostname, this->port);
+            if (encrypted) {
+                this->socket->connectToHostEncrypted(this->hostname, this->port);
+            } else {
+                this->socket->connectToHost(this->hostname, this->port);
+            }
 
             // Send NICK command
             this->nick(nickname);
@@ -36,6 +41,17 @@ namespace Network {
         }
 
         // private slots/functions
+        void Server::sslError(QList<QSslError> listOfErrors) {
+            for(QSslError error : listOfErrors) {
+                if(error.error() == QSslError::SelfSignedCertificate) {
+                    qWarning() << "Self-signed certificate. Proceeding anyway...";
+                    this->socket->ignoreSslErrors();
+                    return;
+                }
+                qCritical() << "Unknown SSL error!" << error.errorString();
+            }
+        }
+
         void Server::pong(QString id) {
             qDebug() << "PING recived! Sending PONG...";
             QString pongCommand = QString("PONG :%1\r\n").arg(id);

@@ -10,13 +10,14 @@ namespace Network {
             Q_OBJECT
         public:
             explicit Server(QString hostname, int port=6667, QObject *parent = 0);
-            void connect(QString nickname, QString realname);
+            void connect(QString nickname, QString realname, bool encrypted = false);
             ~Server();
         private slots:
             void pong(QString id);
             void readData();
             void join(QString channelname = "#mr-bigbang");
             void nick(QString nickname);
+            void sslError(QList<QSslError> listOfErrors);
         signals:
             void changeNickname(QString nickname);
             void ping(QString id);
