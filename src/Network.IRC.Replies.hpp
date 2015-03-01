@@ -411,6 +411,10 @@ namespace Network {
              */
             RPL_TRYAGAIN = 263, // "<command> :Please wait a while and try again."
         };
+
+        inline bool operator==(const int &a, const CommandResponse &b) {
+            return a == (int)b ? true : false;
+        }
     }
 }
 

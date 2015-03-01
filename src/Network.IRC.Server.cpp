@@ -1,7 +1,9 @@
 #include "Network.IRC.Server.hpp"
+#include "Network.IRC.Replies.hpp"
 
 #include <QtCore/QDebug>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QRegularExpression>
 
 namespace Network {
     namespace IRC {
@@ -15,6 +17,7 @@ namespace Network {
             QObject::connect(this->socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslError(QList<QSslError>)));
             QObject::connect(this, SIGNAL(ping(QString)), SLOT(pong(QString)));
             QObject::connect(this, SIGNAL(connected()), this, SLOT(join()));
+            QObject::connect(this, SIGNAL(newCommand(IrcCommand)), this, SLOT(ircCommand(IrcCommand)));
         }
 
         Server::~Server() {
@@ -70,8 +73,11 @@ namespace Network {
             this->socket->write(nickCommand.toStdString().c_str());
         }
 
+        void Server::ircCommand(const IrcCommand &command) {
+
+        }
+
         void Server::readData() {
-            qDebug() << "New data to read!";
             // Get all incoming data and split it by line
             QList<QByteArray> input = this->socket->readAll().replace("\r", "").split('\n');
 
@@ -80,19 +86,45 @@ namespace Network {
                 if(command.isEmpty()) {
                     continue;
                 }
-                qDebug() << command;
+
+                // Source http://www.mybuddymichael.com/writings/a-regular-expression-for-irc-messages.html
+                // Modified slightly so we have named capture groups
+                QRegularExpression input(R"(^(?:[:](?<from>\S+) )?(?<command>\S+)(?: (?!:)(?<recipient>.+?))?(?: [:](?<message>.+))?$)");
+                QRegularExpressionMatch matchedInput = input.match(command);
+
+                IrcCommand recivedCommand;
+                if(matchedInput.hasMatch()) {
+                    recivedCommand.from = matchedInput.captured("from");
+                    recivedCommand.code_command = matchedInput.captured("command");
+                    recivedCommand.to = matchedInput.captured("recipient");
+                    recivedCommand.message = matchedInput.captured("message");
+                } else {
+                    qWarning() << "Not a valid IRC Command!";
+                    continue;
+                }
+
+                /*
+                qDebug() << "Parsing command" << command;
+                qDebug() << "Sender:" << matchedInput.captured("from");
+                qDebug() << "Command/Code:" << matchedInput.captured("command");
+                qDebug() << "Recipient:" << matchedInput.captured("recipient");
+                qDebug() << "Message:" << matchedInput.captured("message");
+                */
 
                 // Reply to PING requests
-                if(command.toLower().startsWith("ping")) {
+                if(recivedCommand.code_command.toLower() == "ping") {
                     emit ping(QString(command.mid(6)));
                     continue;
                 }
 
-                if(command.toLower().contains(" 376 ")) {
-                    qDebug() << "End of MOTD";
+                // Check if we are connected successfully
+                if(recivedCommand.code_command.toInt() == CommandResponse::RPL_ENDOFMOTD) {
+                    qDebug() << "Recived response 376 (End of MOTD)";
                     emit connected();
                     continue;
                 }
+
+                emit newCommand(recivedCommand);
             }
         }
     }

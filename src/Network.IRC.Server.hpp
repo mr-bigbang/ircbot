@@ -5,6 +5,13 @@
 
 namespace Network {
     namespace IRC {
+        struct IrcCommand {
+            QString from;
+            QString code_command;
+            QString to; //Special case #366: "to channel"
+            QString message;
+        };
+
         class Server : public QObject
         {
             Q_OBJECT
@@ -17,11 +24,13 @@ namespace Network {
             void readData();
             void join(QString channelname = "#mr-bigbang");
             void nick(QString nickname);
+            void ircCommand(const IrcCommand &command);
             void sslError(QList<QSslError> listOfErrors);
         signals:
             void changeNickname(QString nickname);
             void ping(QString id);
             void connected();
+            void newCommand(const IrcCommand &command);
         private:
             QSslSocket *socket;
             QString hostname;
