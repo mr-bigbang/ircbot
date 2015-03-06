@@ -16,7 +16,6 @@ namespace Network {
             QObject::connect(this->socket, SIGNAL(readyRead()), this, SLOT(readData()));
             QObject::connect(this->socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslError(QList<QSslError>)));
             QObject::connect(this, SIGNAL(ping(QString)), SLOT(pong(QString)));
-            QObject::connect(this, SIGNAL(connected()), this, SLOT(join()));
             QObject::connect(this, SIGNAL(newCommand(IrcCommand)), this, SLOT(ircCommand(IrcCommand)));
         }
 
