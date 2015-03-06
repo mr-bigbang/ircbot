@@ -62,6 +62,10 @@ namespace Network {
 
         void Server::join(QString channel) {
             qDebug() << "Sending JOIN command. Joining channel" << channel << "...";
+            if(!channel.startsWith('#')) {
+                channel = channel.prepend('#');
+            }
+
             QString joinCommand = QString("JOIN :%1\r\n").arg(channel);
             this->socket->write(joinCommand.toStdString().c_str());
         }
