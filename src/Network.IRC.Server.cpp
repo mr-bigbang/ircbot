@@ -27,6 +27,9 @@ namespace Network {
 
         // public functions
         void Server::connect(QString nickname, QString realname, bool encrypted) {
+            this->nickname = nickname;
+            this->realname = realname;
+
             qDebug() << "Connecting to host" << this->hostname << "on port" << this->port << "...";
             if (encrypted) {
                 this->socket->connectToHostEncrypted(this->hostname, this->port);
@@ -42,10 +45,10 @@ namespace Network {
             this->socket->write("PASS bazinga\r\n");
 
             // Send NICK command
-            this->nick(nickname);
+            this->nick(this->nickname);
 
             qDebug() << "Sending USER command...";
-            QString userCommand = QString("USER %1 0 * :%2\r\n").arg(nickname).arg(realname);
+            QString userCommand = QString("USER %1 0 * :%2\r\n").arg(this->nickname).arg(this->realname);
             this->socket->write(userCommand.toStdString().c_str());
         }
 
@@ -87,7 +90,8 @@ namespace Network {
         }
 
         void Server::nick(QString nickname) {
-            qDebug() << "Sending NICK command. New nickname will be " << nickname;
+            qDebug() << "Sending NICK command...";
+            qDebug() << "New nickname will be" << nickname;
             QString nickCommand = QString("NICK %1\r\n").arg(nickname);
             this->socket->write(nickCommand.toStdString().c_str());
         }

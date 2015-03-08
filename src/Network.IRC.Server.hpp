@@ -78,7 +78,6 @@ namespace Network {
             void sslError(QList<QSslError> listOfErrors);
             void registerConnection();
         signals:
-            void changeNickname(QString nickname);
             void ping(QString id);
             void connected();
             void quitting();
@@ -87,6 +86,8 @@ namespace Network {
             QSslSocket *socket;
             QString hostname;
             int port;
+            QString nickname;
+            QString realname;
         };
     }
 }
