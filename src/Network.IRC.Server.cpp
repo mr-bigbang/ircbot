@@ -32,9 +32,16 @@ namespace Network {
             qDebug() << "Connecting to host" << this->hostname << "on port" << this->port << "...";
             if (encrypted) {
                 this->socket->connectToHostEncrypted(this->hostname, this->port);
+                QObject::connect(this->socket, &QSslSocket::encrypted, this, &Server::registerConnection);
             } else {
                 this->socket->connectToHost(this->hostname, this->port);
+                QObject::connect(this->socket, &QSslSocket::connected, this, &Server::registerConnection);
             }
+        }
+
+        void Server::registerConnection() {
+            qDebug() << "Sending PASS command...";
+            this->socket->write("PASS bazinga\r\n");
 
             // Send NICK command
             this->nick(nickname);
