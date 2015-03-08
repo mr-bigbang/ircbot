@@ -73,7 +73,7 @@ namespace Network {
              * \brief Parse all incomming network data
              */
             void readData();
-            void ircCommand(const IrcCommand &command);
+            virtual void ircCommand(const IrcCommand &command) = 0;
             void sslError(QList<QSslError> listOfErrors);
             void registerConnection();
             void pass(QString password);

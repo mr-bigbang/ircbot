@@ -103,10 +103,6 @@ namespace Network {
             this->socket->write(nickCommand.toStdString().c_str());
         }
 
-        void Server::ircCommand(const IrcCommand &command) {
-
-        }
-
         void Server::readData() {
             // Get all incoming data and split it by line
             QList<QByteArray> input = this->socket->readAll().replace("\r", "").split('\n');
