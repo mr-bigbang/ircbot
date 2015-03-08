@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef NETWORK_IRC_SERVER_HPP
+#define NETWORK_IRC_SERVER_HPP
 
 #include <QtNetwork/QSslSocket>
 
@@ -29,7 +29,7 @@ namespace Network {
              * \param port Port to connect to
              * \param parent Parent which will supervise the instance
              */
-            explicit Server(QString hostname, int port=6667, QObject *parent = 0);
+            explicit Server(QString hostname, int port = 6667, QObject *parent = 0);
             /**
              * \brief Connect to the IRC-Server
              *
@@ -42,7 +42,6 @@ namespace Network {
              * \brief Destructor
              */
             ~Server();
-
         public slots:
             /**
              * \brief Join a channel
@@ -94,4 +93,4 @@ namespace Network {
     }
 }
 
-#endif // SERVER_H
+#endif // NETWORK_IRC_SERVER_HPP

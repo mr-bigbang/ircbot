@@ -61,6 +61,7 @@ namespace Network {
         }
 
         void Server::quit(QString quitMessage) {
+            // QUIT [<quit message>]
             qDebug() << "Sending QUIT command...";
             QString quitCommand = QString("QUIT :%1\r\n").arg(quitMessage);
             this->socket->write(quitCommand.toStdString().c_str());
