@@ -77,6 +77,8 @@ namespace Network {
             void ircCommand(const IrcCommand &command);
             void sslError(QList<QSslError> listOfErrors);
             void registerConnection();
+            void pass(QString password);
+            void user(QString nickname, QString realname);
         signals:
             void ping(QString id);
             void connected();

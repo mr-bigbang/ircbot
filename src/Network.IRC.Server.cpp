@@ -41,14 +41,22 @@ namespace Network {
         }
 
         void Server::registerConnection() {
-            qDebug() << "Sending PASS command...";
-            this->socket->write("PASS bazinga\r\n");
-
-            // Send NICK command
+            this->pass("bazinga");
             this->nick(this->nickname);
+            this->user(this->nickname, this->realname);
+        }
 
+        void Server::pass(QString password) {
+            // PASS <password>
+            qDebug() << "Sending PASS command...";
+            QString passCommand = QString("PASS %1\r\n").arg(password);
+            this->socket->write(passCommand.toStdString().c_str());
+        }
+
+        void Server::user(QString nickname, QString realname) {
+            // USER <user> <mode> <unused> <realname>
             qDebug() << "Sending USER command...";
-            QString userCommand = QString("USER %1 0 * :%2\r\n").arg(this->nickname).arg(this->realname);
+            QString userCommand = QString("USER %1 8 * :%2\r\n").arg(nickname).arg(realname);
             this->socket->write(userCommand.toStdString().c_str());
         }
 
