@@ -13,10 +13,12 @@ namespace Network {
             hostname(hostname),
             port(port)
         {
-            QObject::connect(this->socket, SIGNAL(readyRead()), this, SLOT(readData()));
-            QObject::connect(this->socket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslError(QList<QSslError>)));
-            QObject::connect(this, SIGNAL(ping(QString)), SLOT(pong(QString)));
-            QObject::connect(this, SIGNAL(newCommand(IrcCommand)), this, SLOT(ircCommand(IrcCommand)));
+            QObject::connect(this->socket, &QSslSocket::readyRead, this, &Server::readData);
+            // Cast because signal is overloaded
+            void (QSslSocket:: *sslError)(const QList<QSslError> &error) = &QSslSocket::sslErrors;
+            QObject::connect(this->socket, sslError, this, &Server::sslError);
+            QObject::connect(this, &Server::ping, &Server::pong);
+            QObject::connect(this, &Server::newCommand, &Server::ircCommand);
         }
 
         Server::~Server() {
