@@ -80,7 +80,8 @@ namespace Network {
         }
 
         void Server::join(QString channel) {
-            qDebug() << "Sending JOIN command. Joining channel" << channel << "...";
+            qDebug() << "Sending JOIN command...";
+            qDebug() << "Joining channel" << channel << "...";
             if(!channel.startsWith('#')) {
                 channel = channel.prepend('#');
             }
