@@ -64,13 +64,10 @@ namespace Network {
         // private slots/functions
         void Server::sslError(QList<QSslError> listOfErrors) {
             for(QSslError error : listOfErrors) {
-                if(error.error() == QSslError::SelfSignedCertificate) {
-                    qWarning() << "Self-signed certificate. Proceeding anyway...";
-                    this->socket->ignoreSslErrors();
-                    return;
-                }
-                qCritical() << "Unknown SSL error!" << error.errorString();
+                qWarning() << "SSL error!" << error.errorString();
             }
+            qWarning() << "Proceeding anyway...";
+            this->socket->ignoreSslErrors();
         }
 
         void Server::pong(QString id) {
