@@ -22,8 +22,6 @@ namespace Network {
         }
 
         Server::~Server() {
-            qDebug() << "Closing socket...";
-            this->socket->close();
             delete this->socket;
         }
 
@@ -49,6 +47,15 @@ namespace Network {
             qDebug() << "Sending USER command...";
             QString userCommand = QString("USER %1 0 * :%2\r\n").arg(nickname).arg(realname);
             this->socket->write(userCommand.toStdString().c_str());
+        }
+
+        void Server::quit(QString quitMessage) {
+            qDebug() << "Sending QUIT command...";
+            QString quitCommand = QString("QUIT :%1\r\n").arg(quitMessage);
+            this->socket->write(quitCommand.toStdString().c_str());
+            qDebug() << "Closing socket...";
+            this->socket->close();
+            emit quitting();
         }
 
         // private slots/functions

@@ -60,6 +60,7 @@ namespace Network {
              * \param nickname The new nickname
              */
             void nick(QString nickname);
+            void quit(QString quitMessage);
         private slots:
             /**
              * \brief Send a PONG response
@@ -80,6 +81,7 @@ namespace Network {
             void changeNickname(QString nickname);
             void ping(QString id);
             void connected();
+            void quitting();
             void newCommand(const IrcCommand &command);
         private:
             QSslSocket *socket;
