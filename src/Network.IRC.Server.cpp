@@ -50,24 +50,36 @@ namespace Network {
             // PASS <password>
             qDebug() << "Sending PASS command...";
             QString passCommand = QString("PASS %1\r\n").arg(password);
-            this->socket->write(passCommand.toStdString().c_str());
+            this->rawData(passCommand);
+            //this->socket->write(passCommand.toStdString().c_str());
         }
 
         void Server::user(QString nickname, QString realname) {
             // USER <user> <mode> <unused> <realname>
             qDebug() << "Sending USER command...";
             QString userCommand = QString("USER %1 8 * :%2\r\n").arg(nickname).arg(realname);
-            this->socket->write(userCommand.toStdString().c_str());
+            this->rawData(userCommand);
+            //this->socket->write(userCommand.toStdString().c_str());
         }
 
         void Server::quit(QString quitMessage) {
+            // See also https://stackoverflow.com/questions/13486050
             // QUIT [<quit message>]
             qDebug() << "Sending QUIT command...";
             QString quitCommand = QString("QUIT :%1\r\n").arg(quitMessage);
-            this->socket->write(quitCommand.toStdString().c_str());
+            this->rawData(quitCommand);
+            //this->socket->write(quitCommand.toStdString().c_str());
             qDebug() << "Closing socket...";
             this->socket->close();
             emit quitting();
+        }
+
+        void Server::privmsg(QString recipient, QString message) {
+            // PRIVMSG <msgtarget> <text to be sent>
+            qDebug() << "Sending PRIVMSG command...";
+            QString privmsgCommand = QString("PRIVMSG %1 :%2\r\n").arg(recipient).arg(message);
+            this->rawData(privmsgCommand);
+            //this->socket->write(privmsgCommand.toStdString().c_str());
         }
 
         // private slots/functions
@@ -82,7 +94,8 @@ namespace Network {
         void Server::pong(QString id) {
             qDebug() << "PING recived! Sending PONG...";
             QString pongCommand = QString("PONG :%1\r\n").arg(id);
-            this->socket->write(pongCommand.toStdString().c_str());
+            this->rawData(pongCommand);
+            //this->socket->write(pongCommand.toStdString().c_str());
         }
 
         void Server::join(QString channel) {
@@ -93,14 +106,23 @@ namespace Network {
             }
 
             QString joinCommand = QString("JOIN :%1\r\n").arg(channel);
-            this->socket->write(joinCommand.toStdString().c_str());
+            this->rawData(joinCommand);
+            //this->socket->write(joinCommand.toStdString().c_str());
         }
 
         void Server::nick(QString nickname) {
             qDebug() << "Sending NICK command...";
             qDebug() << "New nickname will be" << nickname;
             QString nickCommand = QString("NICK %1\r\n").arg(nickname);
-            this->socket->write(nickCommand.toStdString().c_str());
+            this->rawData(nickCommand);
+            //this->socket->write(nickCommand.toStdString().c_str());
+        }
+
+        void Server::notice(QString recipient, QString message) {
+            // NOTICE <msgtarget> <text>
+            qDebug() << "Sending NOTICE command...";
+            QString noticeCommand = QString("NOTICE %1 :%2\r\n").arg(recipient).arg(message);
+            this->rawData(noticeCommand);
         }
 
         void Server::readData() {
@@ -120,7 +142,7 @@ namespace Network {
 
                 IrcCommand recivedCommand;
                 if(matchedInput.hasMatch()) {
-                    recivedCommand.from = matchedInput.captured("from");
+                    recivedCommand.from.parseHostmask(matchedInput.captured("from"));
                     recivedCommand.code_command = matchedInput.captured("command");
                     recivedCommand.to = matchedInput.captured("recipient");
                     recivedCommand.message = matchedInput.captured("message");
@@ -129,9 +151,8 @@ namespace Network {
                     continue;
                 }
 
-                /*
                 qDebug() << "Parsing command" << command;
-                qDebug() << "Sender:" << matchedInput.captured("from");
+                /*qDebug() << "Sender:" << matchedInput.captured("from");
                 qDebug() << "Command/Code:" << matchedInput.captured("command");
                 qDebug() << "Recipient:" << matchedInput.captured("recipient");
                 qDebug() << "Message:" << matchedInput.captured("message");
@@ -151,6 +172,18 @@ namespace Network {
                 }
 
                 emit newCommand(recivedCommand);
+            }
+        }
+
+        void User::parseHostmask(QString hostmask) {
+            QRegularExpression exp(R"((?<nick>.+)\!(?<user>\~?.+)\@(?<host>.+))");
+            QRegularExpressionMatch matchedInput = exp.match(hostmask);
+
+            if(matchedInput.hasMatch()) {
+                this->nick_ = matchedInput.captured("nick");
+                this->user_ = matchedInput.captured("user");
+                this->host_ = matchedInput.captured("host");
+                this->hostmask_ = hostmask;
             }
         }
     }

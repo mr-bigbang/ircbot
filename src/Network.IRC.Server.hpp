@@ -5,11 +5,28 @@
 
 namespace Network {
     namespace IRC {
+        class User
+        {
+        public:
+            User() { }
+            void parseHostmask(QString hostmask);
+            inline QString nick() const { return this->nick_; }
+            inline QString user() const { return this->user_; }
+            inline QString host() const { return this->host_; }
+            inline QString hostmask() const { return this->hostmask_; }
+        private:
+            QString hostmask_;
+            QString nick_;
+            QString user_;
+            QString host_;
+        };
+
+
         /**
          * \brief Store disassembled IRC-Command
          */
         struct IrcCommand {
-            QString from;
+            User from;
             QString code_command;
             QString to; //Special case #366: "to channel"
             QString message;
@@ -60,6 +77,17 @@ namespace Network {
              */
             void nick(QString nickname);
             void quit(QString quitMessage);
+            void privmsg(QString recipient, QString message);
+            /**
+             * \brief Send a NOTICE command
+             *
+             * Send a private message to 'recipient', but don't expect a reply.
+             * See also PRIVMSG.
+             *
+             * \param recipient The recipient of the message
+             * \param message The message to be send
+             */
+            void notice(QString recipient, QString message);
         private slots:
             /**
              * \brief Send a PONG response
@@ -89,6 +117,8 @@ namespace Network {
             int port;
             QString nickname;
             QString realname;
+        protected:
+            inline void rawData(QString data) { this->socket->write(data.toStdString().c_str()); }
         };
     }
 }

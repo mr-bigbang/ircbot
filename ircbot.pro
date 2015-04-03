@@ -12,5 +12,10 @@ CONFIG += c++11 console
 
 # Input
 HEADERS += src/Network.IRC.Server.hpp \
-    src/Network.IRC.Replies.hpp
-SOURCES += src/main.cpp src/Network.IRC.Server.cpp
+    src/Network.IRC.Replies.hpp \
+    src/myserver.hpp \
+    src/Network.IRC.CTCP.hpp
+SOURCES += src/main.cpp \
+    src/Network.IRC.Server.cpp \
+    src/myserver.cpp \
+    src/Network.IRC.CTCP.cpp
