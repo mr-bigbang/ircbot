@@ -46,7 +46,7 @@ namespace Network {
              * \param port Port to connect to
              * \param parent Parent which will supervise the instance
              */
-            explicit Server(QString hostname, int port = 6667, QObject *parent = 0);
+            explicit Server(QString hostname, uint port = 6667, QObject *parent = 0);
             /**
              * \brief Connect to the IRC-Server
              *
@@ -88,6 +88,7 @@ namespace Network {
              * \param message The message to be send
              */
             void notice(QString recipient, QString message);
+            inline void rawData(QString data) { this->socket->write(data.toStdString().c_str()); }
         private slots:
             /**
              * \brief Send a PONG response
@@ -117,8 +118,8 @@ namespace Network {
             int port;
             QString nickname;
             QString realname;
-        protected:
-            inline void rawData(QString data) { this->socket->write(data.toStdString().c_str()); }
+        /*protected:
+            inline void rawData(QString data) { this->socket->write(data.toStdString().c_str()); }*/
         };
     }
 }

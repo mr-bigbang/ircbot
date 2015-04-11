@@ -68,7 +68,7 @@ void MyServer::parseXdccHTML(QNetworkReply *reply) {
          return;
      }
 
-     bool suitableBot = false;
+     bool suitableBotFound = false;
      for(QJsonValue pack : packs) {
          QJsonObject botEntry = pack.toObject();
          if(botEntry["botname"] == "KareRaisu" ||
@@ -76,13 +76,13 @@ void MyServer::parseXdccHTML(QNetworkReply *reply) {
             botEntry["botname"] == "Kerbster") {
              qDebug() << QString("Downloading %1 which is %2...").arg(botEntry["name"].toString()).arg(botEntry["size"].toString());
              this->getXdcc(botEntry["botname"].toString(), botEntry["id"].toInt());
-             suitableBot = true;
+             suitableBotFound = true;
              break;
          }
      }
 
      // Send warning if no bot for download has been found
-     if(!suitableBot) {
+     if(!suitableBotFound) {
         qWarning() << "No suitable Bot found";
         this->privmsg("Jinnai", "No suitable XDCC Bot found.");
      }
@@ -93,6 +93,8 @@ void MyServer::getXdcc(QString botname, int pack) {
     this->privmsg(botname, QString("xdcc send %1").arg(pack));
 }
 
+#include "Network.IRC.CTCP.hpp"
+
 void MyServer::ircCommand(const IrcCommand &command) {
     if(CTCP::isCTCP(command.message)) {
         qDebug() << "CTCP!";
@@ -100,6 +102,14 @@ void MyServer::ircCommand(const IrcCommand &command) {
 
     if(command.message == "\001VERSION\001") {
         this->notice(command.from.nick(), CTCP::version("IRCBot", "0.1-alpha", "QT 5.4"));
+    }
+
+    if(command.message.startsWith("\001DCC SEND")) {
+        QRegularExpression dccSend(R"((?<dcc>DCC)\ (?<command>SEND|CHAT)\ (?<filename>\".+\")\ (?<ip>\d+)\ (?<port>\d+)\ (?<filesize>\d+))");
+        QRegularExpressionMatch matchedDccSend = dccSend.match(command.message);
+        DCC dcc(this);
+        dcc.send(matchedDccSend.captured("filename"), QHostAddress(matchedDccSend.captured("ip").toInt()), matchedDccSend.captured("port").toInt(), matchedDccSend.captured("filesize").toInt());
+        return;
     }
 
     if(command.from.hostmask() == "Jinnai!~Jinnai@Certified.Lolicon") {
