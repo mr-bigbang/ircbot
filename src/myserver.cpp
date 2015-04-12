@@ -3,13 +3,18 @@
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonValue>
+#include <QtCore/QThread>
+#include <QtNetwork/QHostAddress>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
 
-#include <QtNetwork/QHostAddress> //DCC SEND IP-Adress
-
 #include "myserver.hpp"
 #include "Network.IRC.CTCP.hpp"
+#include "Network.IRC.DCC.hpp"
+
+/* TODO
+ *   tr() everywhere
+ */
 
 MyServer::MyServer(const QString &hostname, const int &port, QObject *parent) :
      Server(hostname, port, parent)
@@ -18,39 +23,28 @@ MyServer::MyServer(const QString &hostname, const int &port, QObject *parent) :
     QObject::connect(this, &MyServer::searchCrc32, this, &MyServer::getBotData);
 }
 
-/*
- * html downloadNyaa()
- *   cr32 parseNyaaHTML()
- * json getBotData()
- *   xdcc_string parseBotHTML()
- *
- *
- */
-
 void MyServer::downloadNyaa(const QString &nyaaUrl) const {
-    qDebug() << "downloadNyaa()";
     QNetworkAccessManager *man = new QNetworkAccessManager(this->parent());
     QObject::connect(man, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseNyaaHTML(QNetworkReply*)));
     man->get(QNetworkRequest(QUrl(nyaaUrl)));
 }
 
 void MyServer::parseNyaaHTML(QNetworkReply *reply) {
-    qDebug() << "parseNyaaHTML()";
     QString html = reply->readAll();
     reply->deleteLater();
     // Search HTML-Code for typical filename
-    QRegularExpression torrentName(R"(<td class=\"viewtorrentname\">([a-zA-Z0-9 \]\[\-\.\_\(\)\&\#\;\!\@]*)<\/td>)");
+    QRegularExpression torrentName(R"(<td class=\"viewtorrentname\">(.*?)<\/td>)");
     QRegularExpressionMatch matchedTorrentName = torrentName.match(html);
     // Extract CRC from filename
     QRegularExpression crc(R"(\[([a-zA-Z0-9]{8})\])");
     QRegularExpressionMatch matchedCrc = crc.match(matchedTorrentName.captured());
     QString crc32 = matchedCrc.captured().replace('[', "").replace(']', "");
+    qDebug() << "Found CRC32:" << crc32;
 
     emit this->searchCrc32(crc32);
 }
 
 void MyServer::getBotData(const QString &searchString) {
-    qDebug() << "getBotData()";
     QNetworkAccessManager *man = new QNetworkAccessManager(this->parent());
     QObject::connect(man, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseXdccHTML(QNetworkReply*)));
     man->get(QNetworkRequest(QUrl(QString("https://news.kae.re/api/0.1/search/%1.json").arg(searchString))));
@@ -59,6 +53,7 @@ void MyServer::getBotData(const QString &searchString) {
 void MyServer::parseXdccHTML(QNetworkReply *reply) {
      qDebug() << "parseXdccHTML()";
      QString json = reply->readAll();
+     qDebug() << json;
      reply->deleteLater();
      QJsonDocument response = QJsonDocument::fromJson(json.toUtf8());
      QJsonObject obj1 = response.object();
@@ -93,22 +88,37 @@ void MyServer::getXdcc(QString botname, int pack) {
     this->privmsg(botname, QString("xdcc send %1").arg(pack));
 }
 
-#include "Network.IRC.CTCP.hpp"
-
 void MyServer::ircCommand(const IrcCommand &command) {
     if(CTCP::isCTCP(command.message)) {
         qDebug() << "CTCP!";
     }
 
-    if(command.message == "\001VERSION\001") {
+    if(CTCP::isVersionCommand(command.message)) {
         this->notice(command.from.nick(), CTCP::version("IRCBot", "0.1-alpha", "QT 5.4"));
     }
 
     if(command.message.startsWith("\001DCC SEND")) {
         QRegularExpression dccSend(R"((?<dcc>DCC)\ (?<command>SEND|CHAT)\ (?<filename>\".+\")\ (?<ip>\d+)\ (?<port>\d+)\ (?<filesize>\d+))");
         QRegularExpressionMatch matchedDccSend = dccSend.match(command.message);
-        DCC dcc(this);
-        dcc.send(matchedDccSend.captured("filename"), QHostAddress(matchedDccSend.captured("ip").toInt()), matchedDccSend.captured("port").toInt(), matchedDccSend.captured("filesize").toInt());
+
+        // QThread Example by https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
+        QThread *thread = new QThread(this);
+        DCC *dcc = new DCC(this);
+        dcc->setFilename(matchedDccSend.captured("filename").replace('"', "").prepend(R"(C:\temp\)")); // TODO Make 'prepend'-Path configurable
+        dcc->setIP(QHostAddress(matchedDccSend.captured("ip").toInt()));
+        dcc->setPort(matchedDccSend.captured("port").toInt());
+        dcc->setFilesize(matchedDccSend.captured("filesize").toInt());
+
+        //QObject::connect(thread, SIGNAL(started()), dcc, SLOT(send()));
+        QObject::connect(thread, &QThread::started, dcc, &DCC::send);
+        //QObject::connect(dcc, SIGNAL(finished()), thread, SLOT(quit()));
+        QObject::connect(dcc, &DCC::finished, thread, &QThread::quit);
+        //QObject::connect(dcc, SIGNAL(finished()), dcc, SLOT(deleteLater()));
+        QObject::connect(dcc, &DCC::finished, dcc, &DCC::deleteLater);
+        //QObject::connect(dcc, SIGNAL(finished()), thread, SLOT(deleteLater()));
+        QObject::connect(dcc, &DCC::finished, thread, &QThread::deleteLater);
+
+        thread->start();
         return;
     }
 
