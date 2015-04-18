@@ -6,6 +6,12 @@
 #include "Network.IRC.Server.hpp"
 
 using namespace Network::IRC;
+
+struct MyConfiguration : public Configuration {
+    QString friendlyHostmask;
+    QString downloadLocation;
+};
+
 class MyServer : public Server
 {
     Q_OBJECT

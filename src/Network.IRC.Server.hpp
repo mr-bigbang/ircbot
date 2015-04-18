@@ -32,6 +32,11 @@ namespace Network {
             QString message;
         };
 
+        struct Configuration {
+            QString connectionPassword;
+            QString quitMessage;
+        };
+
         /**
          * \brief Connect to an IRC Server
          */

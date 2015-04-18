@@ -12,7 +12,7 @@ class DCC : public QObject
 {
     Q_OBJECT
 public:
-    explicit DCC(/*Network::IRC::Server *server*/QObject *parent = 0);
+    explicit DCC(Network::IRC::Server *server, QObject *parent = 0);
     ~DCC();
 
     /** //TODO
@@ -23,16 +23,16 @@ public:
     static bool isSendCommand(const QString &command); //TODO
 
     /* Getter */
-    inline QString filename() const { return this->_filename; }
-    inline QHostAddress ip() const { return this->_ip; }
-    inline uint port() const { return this->_port; }
-    inline int filesize() const { return this->_filesize; }
+    inline QString filename() const { return this->m_filename; }
+    inline QHostAddress ip() const { return this->m_ip; }
+    inline uint port() const { return this->m_port; }
+    inline int filesize() const { return this->m_filesize; }
 
     /* Setter */
-    inline void setFilename(const QString &filename) { this->_filename = filename; }
-    inline void setIP(const QHostAddress &ip) { this->_ip = ip; }
-    inline void setPort(const uint &port) { this->_port = port; }
-    inline void setFilesize(const int &filesize = -1) { this->_filesize = filesize; }
+    inline void setFilename(const QString &filename) { this->m_filename = filename; }
+    inline void setIP(const QHostAddress &ip) { this->m_ip = ip; }
+    inline void setPort(const uint &port) { this->m_port = port; }
+    inline void setFilesize(const int &filesize = -1) { this->m_filesize = filesize; }
 signals:
     void finished();
 public slots:
@@ -43,15 +43,15 @@ public slots:
 private slots:
     void readData();
 private:
-    QFile *file;
-    QTcpSocket *socket;
+    QFile *m_file;
+    QTcpSocket *m_socket;
 
-    QString _filename;
-    QHostAddress _ip;
-    uint _port;
-    int _filesize = -1;
+    QString m_filename;
+    QHostAddress m_ip;
+    uint m_port;
+    int m_filesize = -1;
 
-    Network::IRC::Server *server;
+    Network::IRC::Server *m_server;
 };
 
 #endif // DCC_H

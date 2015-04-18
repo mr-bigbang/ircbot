@@ -12,10 +12,6 @@
 #include "Network.IRC.CTCP.hpp"
 #include "Network.IRC.DCC.hpp"
 
-/* TODO
- *   tr() everywhere
- */
-
 MyServer::MyServer(const QString &hostname, const int &port, QObject *parent) :
      Server(hostname, port, parent)
 {
@@ -53,33 +49,38 @@ void MyServer::getBotData(const QString &searchString) {
 void MyServer::parseXdccHTML(QNetworkReply *reply) {
      qDebug() << "parseXdccHTML()";
      QString json = reply->readAll();
-     qDebug() << json;
      reply->deleteLater();
      QJsonDocument response = QJsonDocument::fromJson(json.toUtf8());
      QJsonObject obj1 = response.object();
      QJsonArray packs = ((obj1["response"].toObject())["data"].toObject())["packs"].toArray();
      if(packs.isEmpty()) {
-         qWarning() << "Couldn't find packs!";
+         qWarning() << tr("Couldn't find packs!");
          return;
      }
+
+     QStringList bots;
+     bots.append("KareRaisu");
+     bots.append("Kerbster");
+     bots.append("Ginpachi-Sensei");
 
      bool suitableBotFound = false;
      for(QJsonValue pack : packs) {
          QJsonObject botEntry = pack.toObject();
-         if(botEntry["botname"] == "KareRaisu" ||
-            botEntry["botname"] == "Ginpachi-Sensei" ||
-            botEntry["botname"] == "Kerbster") {
-             qDebug() << QString("Downloading %1 which is %2...").arg(botEntry["name"].toString()).arg(botEntry["size"].toString());
-             this->getXdcc(botEntry["botname"].toString(), botEntry["id"].toInt());
-             suitableBotFound = true;
-             break;
+
+         if(bots.indexOf(botEntry["botname"].toString()) == -1) {
+             continue;
          }
+
+         qDebug() << QString(tr("Downloading %1 which is %2...")).arg(botEntry["name"].toString()).arg(botEntry["size"].toString());
+         this->getXdcc(botEntry["botname"].toString(), botEntry["id"].toInt());
+         suitableBotFound = true;
+         break;
      }
 
      // Send warning if no bot for download has been found
      if(!suitableBotFound) {
-        qWarning() << "No suitable Bot found";
-        this->privmsg("Jinnai", "No suitable XDCC Bot found.");
+        qWarning() <<tr( "No suitable Bot found");
+        this->privmsg("Jinnai", tr("No suitable XDCC Bot found."));
      }
 }
 
@@ -103,27 +104,22 @@ void MyServer::ircCommand(const IrcCommand &command) {
 
         // QThread Example by https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
         QThread *thread = new QThread(this);
-        DCC *dcc = new DCC(this);
+        DCC *dcc = new DCC(this, this);
         dcc->setFilename(matchedDccSend.captured("filename").replace('"', "").prepend(R"(C:\temp\)")); // TODO Make 'prepend'-Path configurable
         dcc->setIP(QHostAddress(matchedDccSend.captured("ip").toInt()));
         dcc->setPort(matchedDccSend.captured("port").toInt());
         dcc->setFilesize(matchedDccSend.captured("filesize").toInt());
 
-        //QObject::connect(thread, SIGNAL(started()), dcc, SLOT(send()));
         QObject::connect(thread, &QThread::started, dcc, &DCC::send);
-        //QObject::connect(dcc, SIGNAL(finished()), thread, SLOT(quit()));
         QObject::connect(dcc, &DCC::finished, thread, &QThread::quit);
-        //QObject::connect(dcc, SIGNAL(finished()), dcc, SLOT(deleteLater()));
         QObject::connect(dcc, &DCC::finished, dcc, &DCC::deleteLater);
-        //QObject::connect(dcc, SIGNAL(finished()), thread, SLOT(deleteLater()));
-        QObject::connect(dcc, &DCC::finished, thread, &QThread::deleteLater);
+        QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
         thread->start();
         return;
     }
 
-    if(command.from.hostmask() == "Jinnai!~Jinnai@Certified.Lolicon") {
-        qDebug() << "My master called?!";
+    if(command.from.hostmask() == "Jinnai!~Jinnai@Certified.Lolicon") { //TODO Make configurable
         QRegularExpression botCommand(R"(^(?<command>xdcc|nyaa|fuck)\ (?<param1>\S+)\ ?(?<param2>.+)?$)");
         QRegularExpressionMatch matchedBotCommand = botCommand.match(command.message);
 
@@ -135,7 +131,7 @@ void MyServer::ircCommand(const IrcCommand &command) {
                 emit this->xdcc(matchedBotCommand.captured("param1"), matchedBotCommand.captured("param2"));
             } else if(order == "fuck") {
                 if(matchedBotCommand.captured("param1").toLower() == "you!") {
-                    this->quit("fuck off");
+                    this->quit("fuck off"); //TODO Make configurable
                 }
             } else if(order == "nick") {
                 this->nick(matchedBotCommand.captured("param1"));

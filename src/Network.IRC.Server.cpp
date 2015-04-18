@@ -30,7 +30,7 @@ namespace Network {
             this->nickname = nickname;
             this->realname = realname;
 
-            qDebug() << "Connecting to host" << this->hostname << "on port" << this->port << "...";
+            qDebug() << QString("Connecting to host %1 on port %2...").arg(this->hostname).arg(this->port);
             if (encrypted) {
                 this->socket->connectToHostEncrypted(this->hostname, this->port);
                 QObject::connect(this->socket, &QSslSocket::encrypted, this, &Server::registerConnection);
@@ -41,7 +41,7 @@ namespace Network {
         }
 
         void Server::registerConnection() {
-            this->pass("bazinga");
+            this->pass("bazinga"); //TODO Make configurable
             this->nick(this->nickname);
             this->user(this->nickname, this->realname);
         }
@@ -68,7 +68,6 @@ namespace Network {
             qDebug() << "Sending QUIT command...";
             QString quitCommand = QString("QUIT :%1\r\n").arg(quitMessage);
             this->rawData(quitCommand);
-            //this->socket->write(quitCommand.toStdString().c_str());
             qDebug() << "Closing socket...";
             this->socket->close();
             emit quitting();
@@ -79,7 +78,6 @@ namespace Network {
             qDebug() << "Sending PRIVMSG command...";
             QString privmsgCommand = QString("PRIVMSG %1 :%2\r\n").arg(recipient).arg(message);
             this->rawData(privmsgCommand);
-            //this->socket->write(privmsgCommand.toStdString().c_str());
         }
 
         // private slots/functions
@@ -95,7 +93,6 @@ namespace Network {
             qDebug() << "PING recived! Sending PONG...";
             QString pongCommand = QString("PONG :%1\r\n").arg(id);
             this->rawData(pongCommand);
-            //this->socket->write(pongCommand.toStdString().c_str());
         }
 
         void Server::join(QString channel) {
@@ -107,7 +104,6 @@ namespace Network {
 
             QString joinCommand = QString("JOIN :%1\r\n").arg(channel);
             this->rawData(joinCommand);
-            //this->socket->write(joinCommand.toStdString().c_str());
         }
 
         void Server::nick(QString nickname) {
@@ -115,7 +111,6 @@ namespace Network {
             qDebug() << "New nickname will be" << nickname;
             QString nickCommand = QString("NICK %1\r\n").arg(nickname);
             this->rawData(nickCommand);
-            //this->socket->write(nickCommand.toStdString().c_str());
         }
 
         void Server::notice(QString recipient, QString message) {
